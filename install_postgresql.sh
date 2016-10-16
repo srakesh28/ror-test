@@ -174,7 +174,7 @@ configure_streaming_replication() {
 		# Change configuration including both master and slave configuration settings
 		echo "" >> postgresql.conf
 		echo "# install_postgresql.sh" >> postgresql.conf
-		echo "listen_addresses = 'localhost,$MASTERIP'" >> postgresql.conf
+		echo "listen_addresses = 'localhost,${MASTERIP}'" >> postgresql.conf
 		echo "wal_level = hot_standby" >> postgresql.conf
 		echo "max_wal_senders = 3" >> postgresql.conf
 		echo "wal_keep_segments = 8" >> postgresql.conf
