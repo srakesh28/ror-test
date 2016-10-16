@@ -56,6 +56,7 @@ MASTERIP=""
 SUBNETADDRESS=""
 NODETYPE=""
 REPLICATORPASSWORD=""
+SLAVEIP="10.0.1.5"
 
 #Loop through options passed
 while getopts :m:s:t:p: optname; do
@@ -87,7 +88,7 @@ done
 
 export PGPASSWORD=$REPLICATORPASSWORD
 
-logger "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE"
+logger "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE SLAVEIP=$SLAVEIP"
 
 install_postgresql_service() {
 	logger "Start installing PostgreSQL..."
@@ -131,9 +132,12 @@ configure_streaming_replication() {
 	# Configure the MASTER node
 	if [ "$NODETYPE" == "MASTER" ];
 	then
+		echo "${MASTERIP} ${HOSTNAME}" >> /etc/hosts
 		logger "Create user replicator..."
 		echo "CREATE USER replicator WITH REPLICATION PASSWORD '$PGPASSWORD';"
-		sudo -u postgres psql -c "CREATE USER replicator WITH REPLICATION PASSWORD '$PGPASSWORD';"
+		#sudo -u postgres psql -c "CREATE USER replicator WITH REPLICATION PASSWORD '$PGPASSWORD';"
+		 sudo -u postgres psql -c "CREATE USER replicator REPLICATION LOGIN ENCRYPTED PASSWORD '$PGPASSWORD';"
+		
 	fi
 
 	# Stop service
@@ -152,6 +156,10 @@ configure_streaming_replication() {
 		echo "# install_postgresql.sh" >> pg_hba.conf
 		echo "host replication replicator $SUBNETADDRESS md5" >> pg_hba.conf
 		echo "hostssl replication replicator $SUBNETADDRESS md5" >> pg_hba.conf
+		echo "host replication replicator ${SLAVEIP}/32 md5" >> pg_hba.conf
+		echo "host replication replicator ${SLAVEIP} trust" >> pg_hba.conf
+		echo "hostssl replication replicator ${SLAVEIP}/32 md5" >> pg_hba.conf
+		
 		echo "" >> pg_hba.conf
 			
 		logger "Updated pg_hba.conf"
@@ -166,30 +174,44 @@ configure_streaming_replication() {
 		# Change configuration including both master and slave configuration settings
 		echo "" >> postgresql.conf
 		echo "# install_postgresql.sh" >> postgresql.conf
-		echo "listen_addresses = '*'" >> postgresql.conf
+		echo "listen_addresses = 'localhost,$MASTERIP'" >> postgresql.conf
 		echo "wal_level = hot_standby" >> postgresql.conf
-		echo "max_wal_senders = 10" >> postgresql.conf
-		echo "wal_keep_segments = 500" >> postgresql.conf
+		echo "max_wal_senders = 3" >> postgresql.conf
+		echo "wal_keep_segments = 8" >> postgresql.conf
 		echo "checkpoint_segments = 8" >> postgresql.conf
 		echo "archive_mode = on" >> postgresql.conf
-		echo "archive_command = 'cd .'" >> postgresql.conf
+		echo "archive_command = 'cp -i %p /var/lib/kafkadir/main/archive/%f'" >> postgresql.conf
 		echo "hot_standby = on" >> postgresql.conf
 		echo "" >> postgresql.conf
 		
 		logger "Updated postgresql.conf"
 		echo "Updated postgresql.conf"
+		sudo -u postgres mkdir /var/lib/postgresql/9.3/main/archive/
 	fi
 
 	# Synchronize the slave
 	if [ "$NODETYPE" == "SLAVE" ];
 	then
 		# Remove all files from the slave data directory
+		echo "${SLAVEIP} ${HOSTNAME}" >> /etc/hosts
 		logger "Remove all files from the slave data directory"
 		sudo -u postgres rm -rf /var/lib/kafkadir/main
 
 		# Make a binary copy of the database cluster files while making sure the system is put in and out of backup mode automatically
 		logger "Make binary copy of the data directory from master"
 		sudo PGPASSWORD=$PGPASSWORD -u postgres pg_basebackup -h $MASTERIP -D /var/lib/kafkadir/main -U replicator -x
+		 
+		sudo -u postgres cd /etc/postgressql/9.3/main
+		sudo -u postgres echo "listen_addresses = 'localhost,$SLAVEIP'" >> postgresql.conf
+		sudo -u postgres echo "wal_level = hot_standby" >> postgresql.conf
+		sudo -u postgres echo "checkpoint_segments = 8" >> postgresql.conf
+		sudo -u postgres echo "max_wal_senders = 3" >> postgresql.conf
+		sudo -u postgres echo "wal_keep_segments = 8" >> postgresql.conf
+		sudo -u postgres echo "hot_standby = on" >> postgresql.conf
+		
+		# Run this command on Slave Post Install
+		#sudo -u postgres pg_basebackup -h $MASTERIP -D /var/lib/kafkadir/main -U replicator -v -P
+		
 		 
 		# Create recovery file
 		logger "Create recovery.conf file"
@@ -198,6 +220,7 @@ configure_streaming_replication() {
 		sudo -u postgres echo "standby_mode = 'on'" > recovery.conf
 		sudo -u postgres echo "primary_conninfo = 'host=$MASTERIP port=5432 user=replicator password=$PGPASSWORD'" >> recovery.conf
 		sudo -u postgres echo "trigger_file = '/var/lib/kafkadir/main/failover'" >> recovery.conf
+		sudo -u postgres echo "restore_command = 'cp //var/lib/kafkadir/main/archive/%f %p'" >> recovery.conf
 	fi
 	
 	logger "Done configuring PostgreSQL streaming replication"
@@ -210,7 +233,7 @@ setup_datadisks
 
 service postgresql start
 
-#configure_streaming_replication
+configure_streaming_replication
 
 service postgresql start
 
