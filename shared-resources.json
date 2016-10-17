@@ -8,6 +8,17 @@
     "availabilitySetSettings": {
       "type": "object"
     },
+	
+	"roravailabilitySetSettings": {
+      "type": "object"
+    },
+	
+	"sidekiqavailabilitySetSettings": {
+      "type": "object"
+    },
+	"vsftpvailabilitySetSettings": {
+      "type": "object"
+    },
     "networkSettings": {
       "type": "object"
     }
@@ -63,7 +74,42 @@
         "platformFaultDomainCount": "[parameters('availabilitySetSettings').fdCount]",
         "platformUpdateDomainCount": "[parameters('availabilitySetSettings').udCount]"
       }
+    },
+	
+	{
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[parameters('roravailabilitySetSettings').name]",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "platformFaultDomainCount": "[parameters('roravailabilitySetSettings').fdCount]",
+        "platformUpdateDomainCount": "[parameters('roravailabilitySetSettings').udCount]"
+      }
+	  
+    },
+	
+	{
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[parameters('sidekiqavailabilitySetSettings').name]",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "platformFaultDomainCount": "[parameters('sidekiqavailabilitySetSettings').fdCount]",
+        "platformUpdateDomainCount": "[parameters('sidekiqavailabilitySetSettings').udCount]"
+      }
+    },
+	
+	{
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[parameters('vsftpavailabilitySetSettings').name]",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "platformFaultDomainCount": "[parameters('vsftpavailabilitySetSettings').fdCount]",
+        "platformUpdateDomainCount": "[parameters('vsftpavailabilitySetSettings').udCount]"
+      }
     }
+	
   ],
   "outputs": {}
 }

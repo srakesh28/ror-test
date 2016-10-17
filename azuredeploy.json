@@ -121,9 +121,9 @@
       }
     },
     "tshirtSizeXLarge": {
-      "vmSize": "Standard_A4",
+      "vmSize": "Standard_DS4_v2",
       "diskSize": 1023,
-      "vmTemplate": "[concat(variables('templateBaseUrl'), 'database-16disk-resources.json')]",
+      "vmTemplate": "[concat(variables('templateBaseUrl'), 'database-2disk-resources.json')]",
       "vmCount": 4,
       "slaveCount": 3,
       "storage": {
