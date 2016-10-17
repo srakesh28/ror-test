@@ -171,6 +171,26 @@
         }
       }
     },
+	
+	"roravailabilitySetSettings": {
+      "name": "rorAvailabilitySet",
+      "fdCount": 3,
+      "udCount": 5
+    },
+	
+	"sidekiqavailabilitySetSettings": {
+      "name": "sidekiqAvailabilitySet",
+      "fdCount": 3,
+      "udCount": 5
+    },
+	
+	"vsftpavailabilitySetSettings": {
+      "name": "vsftpAvailabilitySet",
+      "fdCount": 3,
+      "udCount": 5
+    },
+	
+	
     "availabilitySetSettings": {
       "name": "pgsqlAvailabilitySet",
       "fdCount": 3,
