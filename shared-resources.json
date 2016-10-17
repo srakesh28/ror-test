@@ -9,9 +9,6 @@
       "type": "object"
     },
 	
-	"roravailabilitySetSettings": {
-      "type": "object"
-    },
 	
 	"sidekiqavailabilitySetSettings": {
       "type": "object"
@@ -76,17 +73,7 @@
       }
     },
 	
-	{
-      "type": "Microsoft.Compute/availabilitySets",
-      "name": "[parameters('roravailabilitySetSettings').name]",
-      "apiVersion": "2015-05-01-preview",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "platformFaultDomainCount": "[parameters('roravailabilitySetSettings').fdCount]",
-        "platformUpdateDomainCount": "[parameters('roravailabilitySetSettings').udCount]"
-      }
-	  
-    },
+	
 	
 	{
       "type": "Microsoft.Compute/availabilitySets",
